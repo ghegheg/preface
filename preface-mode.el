@@ -22,15 +22,15 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; The `preface-mode put a face to a symbol or a group of symbols, or 
+;; The `preface-mode' put a face to a symbol or a group of symbols, or 
 ;; put faces to more groups of symbols, using overlay concept. 
 ;; Enabling the mode put faces over all declared symbols in the
 ;; whole buffer. Further, it put face on symbol dynamically, while the
 ;; user is typing.
 ;; Depending on the value of `preface-is-words-highlighted' variable,
 ;; the program may highlight words or symbols in buffer. Remember, the
-;; symbol is bounded inferiorly and superiorly by SPC, \n, \t,
-;; \r, \f, \v, but word isn't, it may be part from a symbol.  
+;; symbol is bounded inferiorly and superiorly by `SPC', `\n', `\t',
+;; `\r', `\f', `\v', but word isn't, it may be part from a symbol.  
 ;; The mode does not modify any in buffer, it only put overlay in
 ;; the buffer. Closing the mode returns the buffer to its initial
 ;; state. Its like you have a picture and you put some objects on the
