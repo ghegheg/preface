@@ -29,8 +29,8 @@
 ;; user is typing.
 ;; Depending on the value of `preface-is-words-highlighted' variable,
 ;; the program may highlight words or symbols in buffer. Remember, the
-;; symbol is bounded inferiorly and superiorly by `space', `/n', `/t',
-;; `/r', `/f', but word isn't, it may be part from a symbol.  
+;; symbol is bounded inferiorly and superiorly by SPC, \n, \t,
+;; \r, \f, \v, but word isn't, it may be part from a symbol.  
 ;; The mode does not modify any in buffer, it only put overlay in
 ;; the buffer. Closing the mode returns the buffer to	its initial
 ;; state. Its like you have a picture and you put some objects on the
@@ -38,7 +38,9 @@
 ;; modify the picture itself. Move away the objects and you get the
 ;; picture how it was in the beginning.
 ;; How to set the program? 
-;; - customize `preface-faces' simply type in minibuffer
+;; - customize all program custom variable with the command:
+;; `M-x customize-group : preface' or individually you can 
+;; customize `preface-faces', simply type in minibuffer
 ;; `M-x customize-variable' and `Customize-variable: preface-faces'.
 ;; Here, `Value Menu' button displays two option:
 ;; a) `Use prettify-symbol-mode with face': where you set a
@@ -64,7 +66,7 @@
 ;; (defun your-fun ()
 ;;    (interactive) 
 ;;    (preface-mode 1))
-;; -if something wrong appears, shutting the `preface-mode' will bring
+;; -if something wrong appears, shutting the `preface-mode' brings
 ;; the buffer to initial state. If it doesn't happen, closing after
 ;; saving and reopen the file without preface-mode enabled should do.   
 ;; - set global variables `preface-faces', `preface-is-words-highlighted',
@@ -97,11 +99,10 @@
 	"Group of preface package"
 	:group 'convenience)
 
-
 (defcustom preface-faces 'compilation-warning 
 	"Set faces for some symbols in buffer.
 Option:
-- Use `prettify-symbols-mode' with face: will set all symbols
+- Use `prettify-symbols-mode' with face: it sets all symbols
 	defined in `prettify-symbols-alist' with one face. 
 - Use your own symbols: user declare groups of symbols and their
  face to be displayed in buffer."
@@ -127,7 +128,8 @@ how he wants.")
 (make-variable-buffer-local 'preface-faces-local)
 
 (defvar preface-faces-for-code nil
-	"Preface faces used by code. Please, do not set it!")
+	"Preface faces used by code. Please, do not set it!
+It is set by `preface--set-faces' function.")
 
 (make-variable-buffer-local 'preface-faces-for-code)
 
@@ -136,7 +138,7 @@ how he wants.")
 Set how the symbols from `preface-faces' or
 `preface-faces-local' are considered in buffer:
 `nil' - a symbol that must be bounded at its beginning and its end 
-by one from next characters: space, /n, /t, /r, /f.
+by one from next characters: `SPC', `\\n', `\\t', `\\r', `\\f', `\\v'.
 `not-nil' - a word that needn't be bounded at both sides by previous characters"
 	:type 'symbol
 	:group 'preface)
@@ -149,7 +151,8 @@ For being integrated into the code the variable cannot have `nil' or
 (make-variable-buffer-local 'preface-is-words-highlighted-local)
 
 (defvar preface-is-words-highlighted-for-code nil
-	"Please, do not set it!")
+	"Variable use by code. Please, do not set it!
+It is set by `preface--set-is-words-highlighted' function.")
 
 (make-variable-buffer-local 'preface-is-words-highlighted-for-code)
 
@@ -174,7 +177,8 @@ The `nil' value has no effect, used `0' value instead.")
 (make-variable-buffer-local 'preface-overlays-priority-local)
 
 (defvar preface-overlays-priority-for-code nil
-	"Please, do not set it!")
+	"Variable used by code. Please, do not set it!
+It is set by `preface--set-overlays-priority'.")
 
 (make-variable-buffer-local 'preface-overlays-priority-for-code)
 
@@ -186,31 +190,32 @@ The `nil' value has no effect, used `0' value instead.")
 (defvar preface-vector-data-structure nil
 	"Variable with program internal structure. Please, do not set it!
 It is a vector where index represent ASCII code. 
-Last character of symbols from `preface-faces' variable is recorded in
-vector at an index equal with his ASCII number and with value representing
-the rest of characters in reverse order and corresponding face. 
+Last character of symbols from `preface-faces' variable if it is an
+ASCII character is recorded in vector at an index equal with his 
+ASCII number and with value representing the rest of characters 
+in reverse order and corresponding face. 
 For example `preface-faces' contains:
-((\"tom\" \"gamma\" \"beta\" button) (\"iam\" \"come\" error) ...) 
+(((\"tom\" \"gamma\" \"beta\") . button) ((\"iam\" \"come\") . error) ...) 
 Here in first list `tom' `gamma' `beta' are symbols that must appear
 under `button' face.  
 See at `tom' symbol. Its reverse is `mot'. `m' the reverse first
 character has ASCII code 109. It records in vector at 109 index the
-list: ((111 116 button)). Here 111 is ?o and 116 is ?t the rest of
+list: ((109 111 116 button)). Here 111 is ?o and 116 is ?t the rest of
 characters from `mot'. Symbols `gamma', `beta' are recorded in the
 same manner at ?a index in vector. App arrives at `iam' symbol. Its
-reverse is `mai'. We add into the list from 109 index (97 105 error) 
-where 97 is ?a and 105 is ?i, so list at 109 index is now ((111 116
-button) (97 105 error)), and so on.     
+reverse is `mai'. We add into the list from 109 index (109 97 105 error) 
+where 97 is ?a and 105 is ?i, so list at 109 index is now ((109 111 116
+button) (109 97 105 error)), and so on.     
 Why it is good to record data into vector? Because the vector item at
 specific index may be accessed immediately, if we had chosen a list,
 it might have been passed to arrive at specific index. It's about the
-time.The `after-change-function' hook contains a function that must
-execute rapid. If the function passes a list with 100 items every time
-we type a character it is very costly. But what happens if symbol ends
+time.The `after-change-functions' hook contains a function that must
+execute rapid. If the function passes a list with 100 items, it lasts 
+long every time we type a character. But what happens if symbol ends
 with an character that is not in ASCII code, for example `tom©', © is
-not in ASCII code? Then it will be recorded in
-`preface-list-data-structure'. Anyway, most letters that user types or
-that are in needed symbols to have another face are from ASCII code.") 
+not in ASCII code? Then it is recorded in `preface-list-data-structure'. 
+Anyway, most letters that user types or that are in the symbols are
+from ASCII code.") 
 
 (make-variable-buffer-local 'preface-vector-data-structure)
 
@@ -225,7 +230,7 @@ so: ((169 97 109 109 97 103 button)....). Read
 (make-variable-buffer-local 'preface-list-data-structure)
 
 (defun preface--set-faces ()
-	"Set `preface-faces-for-code' variable. Please, do no set it!."
+	"Set `preface-faces-for-code' variable. Please, do no use it!."
 	(if preface-faces-local
 			(setq preface-faces-for-code preface-faces-local)
 		(if (consp preface-faces)
@@ -236,7 +241,7 @@ so: ((169 97 109 109 97 103 button)....). Read
 				(setq preface-faces-for-code (cons (cons result preface-faces)
 																					 nil))))))
 
-(defun preface--set-is-words-highlight ()
+(defun preface--set-is-words-highlighted ()
 	"Set `preface-is-words-highlighted-for-code' variable."
 	(setq preface-is-words-highlighted-for-code
 				(if preface-is-words-highlighted-local 
@@ -250,8 +255,8 @@ so: ((169 97 109 109 97 103 button)....). Read
 														 " must be set with `yes' or `no'"))))
 					preface-is-words-highlighted)))
 
-(defun preface--set-overlay-priority ()
-	"Set `preface-overlays-priority-for-code'."
+(defun preface--set-overlays-priority ()
+	"Set `preface-overlays-priority-for-code' variable."
 	(if preface-overlays-priority-local
 			(setq preface-overlays-priority-for-code
 						preface-overlays-priority-local)
@@ -282,9 +287,9 @@ so: ((169 97 109 109 97 103 button)....). Read
 (defun preface-get-symbol-near-point ()
 	"Get symbol from `preface-faces-for-code' near point, before. 
 The symbol may be or not bounded inferiorly by other characters that 
-are not `space', `/n' `/t' `/r' `/f', but is bounded superiorly by point. 
-The function returns the symbol, its beginning point in buffer and its
-face or nil if nothing exists." 
+are not `SPC', `\\n', `\\t', `\\r', `\\f', `\\v', but is bounded 
+superiorly by point. The function returns the symbol, its beginning 
+point in buffer and its face or nil if nothing exists." 
 	(backward-char)
 	(let* ((char (char-after))
 				 (data (if (<= char 126)
@@ -325,11 +330,12 @@ face or nil if nothing exists."
 				(throw 'foo nil)))))
 
 (defun preface-is-white (char)
-	"Check if CHAR is space, \n, \t, \r, or \f."
+	"Check if CHAR is `SPC', `\\n', `\\t', `\\r', `\\f' or `\\v'."
 	(if (or (eql char ? )
 					(eql char ?\t)
 					(eql char ?\r)
 					(eql char ?\f)
+					(eql char ?\v)
 					(eql char ?\n))
 			t
 		nil))
@@ -373,7 +379,7 @@ face or nil if nothing exists."
 				nil))))
 
 (defun preface-put-overlays-in-zone (beg end)
-	"Put overlay over symbols from `preface-face' or `preface-face-local'." 
+	"Put overlay over symbols from `preface-faces' or `preface-faces-local'." 
 	;; for correct code execution of this package, next modes must be closed.
 	(let ((evil-mode nil)									
 				(evil-local-mode nil))
@@ -408,7 +414,7 @@ face or nil if nothing exists."
 BEG - beginning of region just changed 
 END - end of region just changed
 LEN - length of the text that existed before the change. 
-See `after-change-function', the function will be added on this hook."
+See `after-change-function', the function is contained on this hook."
 	(when (zerop len)
 		(save-excursion
 			(save-match-data
@@ -420,7 +426,7 @@ See `after-change-function', the function will be added on this hook."
 
 (define-minor-mode preface-mode
 	"Toggle `preface-mode' that puts faces on symbols in buffer.
-For more details read comments from beginning of `preface-mode' file."
+For complete details read comments from beginning of `preface-mode.el' file."
 	:init-value nil
 	:lighter nil
 	(if preface-mode
@@ -429,8 +435,8 @@ For more details read comments from beginning of `preface-mode' file."
 					(delete-overlay i))
 				(setq preface-overlays nil) 
 				(preface--set-faces)
-				(preface--set-is-words-highlight)
-				(preface--set-overlay-priority)
+				(preface--set-is-words-highlighted)
+				(preface--set-overlays-priority)
 				(preface--set-data-structure)
 				(add-hook 'after-change-functions 'preface-put-overlay-dynamically nil 'local)
 				(save-excursion
