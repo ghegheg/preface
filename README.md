@@ -1,5 +1,5 @@
-Emacs package to modify faces of symbols used by `prettify-symbols-mode'        
-For package usage read comments from beginning of `preface-mode.el' file.       
+Emacs package to modify faces of symbols used by prettify-symbols-mode       
+For package usage read comments from beginning of preface-mode.el file.       
 It's pointless to write it here again.                                             
 Package installation:                                                           
 1) Copy preface-mode.el in any director from variable `load-path'. To see       
