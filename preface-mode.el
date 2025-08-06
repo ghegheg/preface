@@ -78,7 +78,7 @@
 ;; `preface-is-words-highlighted-local' and `preface-overlays-priority-local'. 
 ;; These buffer local variables are set with `setq' with a non-nil
 ;; value. Setting these with nil makes the program to not consider
-;; them in calculation again, but to consider its global customization
+;; them in calculation again, but to consider its global custom
 ;; variable correspondent.  
 ;; Only custom variables are persistent and only if they are
 ;; saved after modification (press `State' button and select `Save for
